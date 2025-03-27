@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/AdminPanel.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function AdminPanel() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [tests, setTests] = useState([]);
@@ -20,7 +22,7 @@ function AdminPanel() {
   const fetchTests = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/tests');
+      const response = await axios.get(`${API_URL}/api/tests`);
       setTests(response.data);
       setStatus({ message: '', type: '' });
     } catch (error) {
@@ -99,7 +101,7 @@ function AdminPanel() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post('http://localhost:5000/api/test', fileContent, {
+      const response = await axios.post(`${API_URL}/api/test`, fileContent, {
         headers: {
           'Authorization': `Bearer ${password}`
         }
@@ -150,7 +152,7 @@ function AdminPanel() {
 
     try {
       setIsLoading(true);
-      await axios.delete(`http://localhost:5000/api/test/${testToDelete._id}`, {
+      await axios.delete(`${API_URL}/api/test/${testToDelete._id}`, {
         headers: {
           'Authorization': `Bearer ${password}`
         }

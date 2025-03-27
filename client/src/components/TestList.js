@@ -3,6 +3,8 @@ import axios from 'axios';
 import QuestionCard from './QuestionCard';
 import '../styles/TestList.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function TestList() {
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
@@ -55,7 +57,7 @@ function TestList() {
     try {
       setIsLoading(true);
       setShowError(false);
-      const response = await axios.get('http://localhost:5000/api/tests');
+      const response = await axios.get(`${API_URL}/api/tests`);
       const shuffledTests = shuffleArray(response.data);
       setTests(shuffledTests);
       setError('');
