@@ -57,14 +57,32 @@ function TestList() {
     try {
       setIsLoading(true);
       setShowError(false);
-      const response = await axios.get(`${API_URL}/api/tests`);
+      setError('');
+      
+      const response = await axios.get(`${API_URL}/api/tests`, {
+        timeout: 30000, // 30 секунд таймаут
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Неправильний формат даних від сервера');
+      }
+      
       const shuffledTests = shuffleArray(response.data);
       setTests(shuffledTests);
-      setError('');
       setIsLoading(false);
     } catch (error) {
       console.error('Помилка при завантаженні тестів:', error);
-      setError('Помилка при завантаженні тестів');
+      const errorMessage = error.response 
+        ? `Помилка сервера: ${error.response.status}` 
+        : error.code === 'ECONNABORTED'
+        ? 'Час очікування відповіді від сервера минув'
+        : 'Помилка підключення до сервера';
+      
+      setError(errorMessage);
       setTimeout(() => {
         setIsLoading(false);
         setShowError(true);
@@ -150,14 +168,25 @@ function TestList() {
       <div className="loading">
         Завантаження тестів...
         <p className="loading-subtext">
-          Схоже сервер виключений, його запуск займає біля хвилини
+          Зачекайте, будь ласка. Перше завантаження може тривати до хвилини
+        </p>
+        <p className="loading-subtext">
+          Якщо завантаження триває довше, спробуйте оновити сторінку
         </p>
       </div>
     );
   }
 
   if (showError && error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="error">
+        <h2>{error}</h2>
+        <p>Спробуйте оновити сторінку або зв'яжіться з адміністратором</p>
+        <button onClick={() => window.location.reload()} className="reset-btn">
+          Оновити сторінку
+        </button>
+      </div>
+    );
   }
 
   if (selectedTest && !result) {

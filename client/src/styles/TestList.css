@@ -439,12 +439,17 @@
   font-size: 1.4rem;
   color: #AF8F87;
   font-family: "Nunito", sans-serif;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  margin: 20px;
+  box-shadow: 0 8px 32px rgba(175, 143, 135, 0.25);
+  border: 3px solid #EAC4B9;
 }
 
 .loading-subtext {
   font-size: 1rem;
   color: #AF8F87;
-  margin-top: 10px;
+  margin-top: 15px;
   font-style: italic;
   opacity: 0.8;
 }
@@ -452,9 +457,41 @@
 .error {
   text-align: center;
   padding: 40px;
-  color: #ff6b6b;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  margin: 20px;
+  box-shadow: 0 8px 32px rgba(175, 143, 135, 0.25);
+  border: 3px solid #EAC4B9;
+}
+
+.error h2 {
+  color: #FF5252;
   font-size: 1.4rem;
-  font-family: "Nunito", sans-serif;
+  margin-bottom: 20px;
+}
+
+.error p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 15px 0;
+}
+
+.error .reset-btn {
+  background: #AF8F87;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.error .reset-btn:hover {
+  background: #9A7E77;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(175, 143, 135, 0.3);
 }
 
 @media (max-width: 480px) {
@@ -486,6 +523,34 @@
     padding: 12px 30px;
     font-size: 1.1rem;
     margin-top: 20px;
+  }
+
+  .loading,
+  .error {
+    margin: 10px;
+    padding: 20px;
+  }
+
+  .loading {
+    font-size: 1.2rem;
+  }
+
+  .loading-subtext {
+    font-size: 0.9rem;
+    margin-top: 10px;
+  }
+
+  .error h2 {
+    font-size: 1.2rem;
+  }
+
+  .error p {
+    font-size: 1rem;
+  }
+
+  .error .reset-btn {
+    padding: 10px 25px;
+    font-size: 1rem;
   }
 }
 
