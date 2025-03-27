@@ -1,0 +1,607 @@
+.admin-panel {
+  margin: 0;
+  padding: 20px;
+  background: url('../assets/background.png') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Nunito", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.header h1 {
+  color: #AF8F87;
+  font-size: 2.5rem;
+  margin: 20px 0;
+  font-family: "Nunito", sans-serif;
+  text-shadow: 2px 2px 4px rgba(255, 143, 163, 0.2);
+}
+
+.upload-section {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 30px;
+  box-shadow: 0 8px 32px rgba(255, 182, 193, 0.2);
+  width: 100%;
+  max-width: 800px;
+  border: 3px solid #EAC4B9;
+  animation: fadeIn 0.5s ease;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.password-input {
+  padding: 15px;
+  border: 2px solid #EAC4B9;
+  border-radius: 15px;
+  font-size: 16px;
+  font-family: "Nunito", sans-serif;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.password-input:focus {
+  border-color: #AF8F87;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(175, 143, 135, 0.1);
+}
+
+.auth-btn {
+  padding: 15px;
+  background: #AF8F87;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: "Nunito", sans-serif;
+  box-shadow: 0 4px 12px rgba(255, 143, 163, 0.3);
+}
+
+.auth-btn:hover {
+  background: #b4877b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 143, 163, 0.4);
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  display: inline-block;
+  padding: 15px 20px;
+  background: #AF8F87;
+  color: white;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Nunito", sans-serif;
+  box-shadow: 0 4px 12px rgba(255, 143, 163, 0.3);
+}
+
+.file-label:hover {
+  background: #b4877b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 143, 163, 0.4);
+}
+
+.file-label:disabled {
+  background: #F0D9CF;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.selected-file {
+  margin: 15px 0;
+  color: #AF8F87;
+  font-style: italic;
+  text-align: center;
+  font-family: "Nunito", sans-serif;
+}
+
+.upload-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  background: #AF8F87;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  font-family: "Nunito", sans-serif;
+  box-shadow: 0 4px 12px rgba(255, 143, 163, 0.3);
+}
+
+.upload-btn:disabled {
+  background: #F0D9CF;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #b4877b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 143, 163, 0.4);
+}
+
+.tests-list {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 30px;
+  animation: fadeIn 0.5s ease;
+}
+
+.tests-list h2 {
+  color: #AF8F87;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  text-align: center;
+  font-family: "Nunito", sans-serif;
+}
+
+.test-item {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px;
+  margin: 15px 0;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.15);
+  border: 3px solid #EAC4B9;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease;
+}
+
+.test-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.2);
+  border-color: #AF8F87;
+}
+
+.test-item h3 {
+  color: #AF8F87;
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  font-family: "Nunito", sans-serif;
+}
+
+.test-theme {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 10px 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.test-date {
+  color: #AF8F87;
+  font-size: 0.9rem;
+  margin: 5px 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.test-questions {
+  color: #AF8F87;
+  font-weight: 500;
+  margin: 5px 0 0 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.status-message {
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 15px;
+  text-align: center;
+  font-family: "Nunito", sans-serif;
+  animation: fadeIn 0.3s ease;
+}
+
+.success {
+  background: #E8F5E9;
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+
+.error {
+  background: #FFEBEE;
+  color: #FF5252;
+  border: 2px solid #FF5252;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #AF8F87;
+  font-style: italic;
+  font-family: "Nunito", sans-serif;
+}
+
+.no-tests {
+  text-align: center;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  color: #AF8F87;
+  font-style: italic;
+  font-family: "Nunito", sans-serif;
+  border: 3px solid #EAC4B9;
+}
+
+.upload-form {
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  border: 2px solid #EAC4B9;
+}
+
+.upload-form label {
+  display: block;
+  margin-bottom: 15px;
+  color: #AF8F87;
+  font-size: 1.2rem;
+}
+
+.upload-form input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 2px dashed #EAC4B9;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+}
+
+.upload-form button {
+  background: #AF8F87;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-form button:hover {
+  background: #b4877b;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(175, 143, 135, 0.3);
+}
+
+.test-list {
+  margin-top: 40px;
+}
+
+.test-item {
+  background: white;
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(175, 143, 135, 0.15);
+  border: 2px solid #EAC4B9;
+  transition: all 0.3s ease;
+}
+
+.test-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(175, 143, 135, 0.2);
+}
+
+.test-item h3 {
+  color: #AF8F87;
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+}
+
+.test-item p {
+  color: #666;
+  margin: 5px 0;
+  font-size: 1.1rem;
+}
+
+.delete-btn {
+  background: #AF8F87;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #b4877b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+}
+
+.delete-btn:disabled {
+  background: #F0D9CF;
+  cursor: not-allowed;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease;
+}
+
+.modal-content h3 {
+  color: #AF8F87;
+  font-size: 1.5rem;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.modal-content p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0 0 25px 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.modal-button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.modal-button.cancel {
+  background: #EAC4B9;
+  color: #AF8F87;
+}
+
+.modal-button.cancel:hover {
+  background: #F0D9CF;
+  transform: translateY(-2px);
+}
+
+.modal-button.confirm {
+  background: #AF8F87;
+  color: white;
+}
+
+.modal-button.confirm:hover {
+  background: #b4877b;
+  transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-panel {
+    padding: 10px;
+  }
+
+  .header h1 {
+    font-size: 1.8rem;
+    margin: 10px 0;
+  }
+
+  .upload-section {
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    width: 95%;
+  }
+
+  .auth-form {
+    width: 100%;
+  }
+
+  .password-input {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .auth-btn,
+  .file-label,
+  .upload-btn {
+    padding: 12px;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  .test-item {
+    padding: 15px;
+    margin: 10px 0;
+  }
+
+  .test-item h3 {
+    font-size: 1.1rem;
+  }
+
+  .test-theme {
+    font-size: 0.9rem;
+  }
+
+  .test-date,
+  .test-questions {
+    font-size: 0.8rem;
+  }
+
+  .status-message {
+    padding: 10px;
+    font-size: 14px;
+    margin: 10px 0;
+  }
+
+  .tests-list {
+    width: 95%;
+  }
+
+  .tests-list h2 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+  }
+
+  .selected-file {
+    font-size: 14px;
+    margin: 10px 0;
+  }
+
+  .delete-btn {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    padding: 20px;
+    width: 85%;
+  }
+
+  .modal-content h3 {
+    font-size: 1.3rem;
+  }
+
+  .modal-content p {
+    font-size: 1rem;
+  }
+
+  .modal-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .admin-panel {
+    padding: 15px;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .upload-section {
+    padding: 20px;
+    width: 90%;
+  }
+
+  .test-item {
+    padding: 20px;
+  }
+
+  .test-item h3 {
+    font-size: 1.3rem;
+  }
+
+  .test-theme {
+    font-size: 1rem;
+  }
+
+  .tests-list {
+    width: 90%;
+  }
+
+  .tests-list h2 {
+    font-size: 1.6rem;
+  }
+
+  .auth-btn,
+  .file-label,
+  .upload-btn {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .status-message {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-panel {
+    padding: 20px;
+  }
+
+  .upload-section {
+    width: 85%;
+  }
+
+  .tests-list {
+    width: 85%;
+  }
+
+  .header h1 {
+    font-size: 2.2rem;
+  }
+}
