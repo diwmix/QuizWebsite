@@ -325,6 +325,44 @@
   font-size: 1.1rem;
 }
 
+.test-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.lock-btn {
+  background: #AF8F87;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  width: 50%;
+}
+
+.lock-btn.locked {
+  background: #666;
+}
+
+.lock-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(175, 143, 135, 0.3);
+}
+
+.lock-btn:disabled {
+  background: #F0D9CF;
+  cursor: not-allowed;
+}
+
+.delete-btn {
+  flex: 1;
+}
+
 .delete-btn {
   background: #AF8F87;
   color: white;
@@ -336,7 +374,7 @@
   margin-top: 15px;
   font-family: "Nunito", sans-serif;
   font-size: 1rem;
-  width: 100%;
+  width: 50%;
 }
 
 .delete-btn:hover:not(:disabled) {

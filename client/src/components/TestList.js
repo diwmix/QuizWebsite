@@ -19,6 +19,7 @@ function TestList() {
   const [showError, setShowError] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [testToStart, setTestToStart] = useState(null);
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
     const savedState = localStorage.getItem('testState');
@@ -102,6 +103,13 @@ function TestList() {
   };
 
   const handleStartClick = (test) => {
+    if (test.isLocked) {
+      setStatus({
+        message: 'Цей тест заблокований',
+        type: 'error'
+      });
+      return;
+    }
     setTestToStart(test);
     setShowStartModal(true);
   };
@@ -188,6 +196,13 @@ function TestList() {
   };
 
   const generateWordFile = async (test) => {
+    if (test.isLocked) {
+      setStatus({
+        message: 'Цей тест заблокований',
+        type: 'error'
+      });
+      return;
+    }
     const doc = new Document({
       sections: [{
         properties: {},
@@ -404,18 +419,25 @@ function TestList() {
             <p className="questions-count">
               Кількість питань: {test.questions.length}
             </p>
+            {test.isLocked && (
+              <div className="lock-icon">
+                <i className="fas fa-lock"></i>
+              </div>
+            )}
             <div className="test-card-buttons">
               <button
-                className="start-btn"
+                className={`start-btn ${test.isLocked ? 'locked' : ''}`}
                 onClick={() => handleStartClick(test)}
+                disabled={test.isLocked}
               >
-                Почати тест
+                {test.isLocked ? 'Тест недоступний' : 'Почати тест'}
               </button>
               <button
-                className="download-btn"
+                className={`download-btn ${test.isLocked ? 'locked' : ''}`}
                 onClick={() => generateWordFile(test)}
+                disabled={test.isLocked}
               >
-                База тестів
+                {test.isLocked ? 'База тестів недоступна' : 'База тестів'}
               </button>
             </div>
           </div>

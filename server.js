@@ -71,9 +71,12 @@ const questionSchema = new mongoose.Schema({
 
 // Схема для тесту
 const testSchema = new mongoose.Schema({
+  faculty: String,
+  course: String,
   subject: String,
   theme: String,
   questions: [questionSchema],
+  isLocked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -85,17 +88,13 @@ const apiRouter = express.Router();
 // Ендпоінт для збереження тесту (захищений)
 apiRouter.post('/test', authenticateAdmin, async (req, res) => {
   try {
-    console.log('Отримано запит на збереження тесту');
     const testData = req.body;
-    console.log('Дані тесту:', JSON.stringify(testData, null, 2));
     
     const newTest = new Test(testData);
     const savedTest = await newTest.save();
     
-    console.log('Тест успішно збережено з ID:', savedTest._id);
     res.status(201).json({ message: 'Тест успішно збережено', testId: savedTest._id });
   } catch (error) {
-    console.error('Помилка при збереженні тесту:', error);
     res.status(500).json({ message: 'Помилка при збереженні тесту', error: error.message });
   }
 });
@@ -103,12 +102,9 @@ apiRouter.post('/test', authenticateAdmin, async (req, res) => {
 // Отримання всіх тестів (публічний доступ)
 apiRouter.get('/tests', async (req, res) => {
   try {
-    console.log('Отримано запит на отримання тестів');
     const tests = await Test.find().sort({ createdAt: -1 });
-    console.log(`Знайдено ${tests.length} тестів`);
     res.json(tests);
   } catch (error) {
-    console.error('Помилка при отриманні тестів:', error);
     res.status(500).json({ message: 'Помилка при отриманні тестів', error: error.message });
   }
 });
@@ -116,18 +112,36 @@ apiRouter.get('/tests', async (req, res) => {
 // Видалення тесту (захищений доступ)
 apiRouter.delete('/test/:id', authenticateAdmin, async (req, res) => {
   try {
-    console.log('Отримано запит на видалення тесту:', req.params.id);
     const result = await Test.findByIdAndDelete(req.params.id);
     
     if (!result) {
       return res.status(404).json({ message: 'Тест не знайдено' });
     }
     
-    console.log('Тест успішно видалено');
     res.json({ message: 'Тест успішно видалено' });
   } catch (error) {
-    console.error('Помилка при видаленні тесту:', error);
     res.status(500).json({ message: 'Помилка при видаленні тесту', error: error.message });
+  }
+});
+
+// Оновлення статусу блокування тесту (захищений доступ)
+apiRouter.put('/test/:id/lock', authenticateAdmin, async (req, res) => {
+  try {
+    const { isLocked } = req.body;
+    
+    const updatedTest = await Test.findByIdAndUpdate(
+      req.params.id,
+      { isLocked },
+      { new: true }
+    );
+    
+    if (!updatedTest) {
+      return res.status(404).json({ message: 'Тест не знайдено' });
+    }
+    
+    res.json(updatedTest);
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при оновленні статусу блокування тесту', error: error.message });
   }
 });
 

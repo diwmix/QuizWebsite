@@ -205,6 +205,33 @@
   box-shadow: 0 6px 16px rgba(175, 143, 135, 0.3);
 }
 
+.start-btn.locked,
+.download-btn.locked {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.start-btn.locked:hover,
+.download-btn.locked:hover {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.lock-icon {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  color: #666;
+  font-size: 1.5rem;
+  z-index: 1;
+}
+
 .no-tests {
   text-align: center;
   padding: 40px;

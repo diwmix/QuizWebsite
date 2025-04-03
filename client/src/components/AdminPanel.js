@@ -177,6 +177,36 @@ function AdminPanel() {
     }
   };
 
+  const handleLockTest = async (testId, isLocked) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.put(`${API_URL}/api/test/${testId}/lock`, 
+        { isLocked },
+        {
+          headers: {
+            'Authorization': `Bearer ${password}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      setStatus({
+        message: `Тест успішно ${isLocked ? 'заблоковано' : 'розблоковано'}`,
+        type: 'success'
+      });
+      
+      await fetchTests();
+    } catch (error) {
+      console.error('Помилка при блокуванні тесту:', error);
+      setStatus({
+        message: `Помилка при блокуванні тесту: ${error.response?.data?.message || error.message}`,
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="admin-panel">
       <div className="header">
@@ -245,13 +275,22 @@ function AdminPanel() {
                 Кількість питань: {test.questions.length}
               </p>
               {isAuthenticated && (
-                <button 
-                  className="delete-btn"
-                  onClick={() => handleDeleteClick(test)}
-                  disabled={isLoading}
-                >
-                  Видалити тест
-                </button>
+                <div className="test-actions">
+                  <button 
+                    className={`lock-btn ${test.isLocked ? 'locked' : ''}`}
+                    onClick={() => handleLockTest(test._id, !test.isLocked)}
+                    disabled={isLoading}
+                  >
+                    {test.isLocked ? 'Розблокувати' : 'Заблокувати'}
+                  </button>
+                  <button 
+                    className="delete-btn"
+                    onClick={() => handleDeleteClick(test)}
+                    disabled={isLoading}
+                  >
+                    Видалити
+                  </button>
+                </div>
               )}
             </div>
           ))
