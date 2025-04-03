@@ -102,10 +102,25 @@ apiRouter.post('/test', authenticateAdmin, async (req, res) => {
 // Отримання всіх тестів (публічний доступ)
 apiRouter.get('/tests', async (req, res) => {
   try {
-    const tests = await Test.find().sort({ createdAt: -1 });
+    const tests = await Test.find()
+      .select('-questions') // Виключаємо поле questions
+      .sort({ createdAt: -1 });
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: 'Помилка при отриманні тестів', error: error.message });
+  }
+});
+
+// Отримання повного тесту за ID (публічний доступ)
+apiRouter.get('/test/:id', async (req, res) => {
+  try {
+    const test = await Test.findById(req.params.id);
+    if (!test) {
+      return res.status(404).json({ message: 'Тест не знайдено' });
+    }
+    res.json(test);
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при отриманні тесту', error: error.message });
   }
 });
 
@@ -142,6 +157,36 @@ apiRouter.put('/test/:id/lock', authenticateAdmin, async (req, res) => {
     res.json(updatedTest);
   } catch (error) {
     res.status(500).json({ message: 'Помилка при оновленні статусу блокування тесту', error: error.message });
+  }
+});
+
+// Ендпоінт для пакетного збереження тестів (захищений)
+apiRouter.post('/tests/batch', authenticateAdmin, async (req, res) => {
+  try {
+    const testsData = req.body;
+    
+    if (!Array.isArray(testsData)) {
+      return res.status(400).json({ 
+        message: 'Неправильний формат даних. Очікується масив тестів.' 
+      });
+    }
+
+    const savedTests = await Promise.all(
+      testsData.map(testData => {
+        const newTest = new Test(testData);
+        return newTest.save();
+      })
+    );
+    
+    res.status(201).json({ 
+      message: `Успішно збережено ${savedTests.length} тест(ів)`,
+      testIds: savedTests.map(test => test._id)
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Помилка при збереженні тестів', 
+      error: error.message 
+    });
   }
 });
 

@@ -3,20 +3,28 @@ import axios from 'axios';
 import '../styles/AdminPanel.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const ADMIN_PASSWORD = 'snVeG97C69';
 
 function AdminPanel() {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [fileContents, setFileContents] = useState([]);
   const [tests, setTests] = useState([]);
   const [status, setStatus] = useState({ message: '', type: '' });
-  const [fileContent, setFileContent] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     fetchTests();
+    // Перевіряємо збережений пароль при завантаженні
+    const savedPassword = localStorage.getItem('adminPassword');
+    if (savedPassword === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setPassword(savedPassword);
+    }
   }, []);
 
   const fetchTests = async () => {
@@ -39,53 +47,76 @@ function AdminPanel() {
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    if (password.trim()) {
+    if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
+      setPasswordError('');
       setStatus({ message: 'Авторизовано успішно', type: 'success' });
+      // Зберігаємо пароль в localStorage
+      localStorage.setItem('adminPassword', password);
+    } else {
+      setPasswordError('Невірний пароль');
+      setTimeout(() => {
+        setPassword('');
+      }, 1000);
     }
   };
 
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  // Додаємо функцію для виходу
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setPassword('');
+    localStorage.removeItem('adminPassword');
+  };
 
-    setSelectedFile(file);
+  const handleFileSelect = (event) => {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    setSelectedFiles(files);
     setStatus({ message: '', type: '' });
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = JSON.parse(e.target.result);
-        if (!content.subject || !content.theme || !content.questions) {
-          throw new Error('Неправильний формат JSON файлу');
-        }
-        setFileContent(content);
+    const readFiles = files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const content = JSON.parse(e.target.result);
+            if (!content.subject || !content.theme || !content.questions) {
+              throw new Error(`Неправильний формат JSON файлу: ${file.name}`);
+            }
+            resolve(content);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error(`Помилка читання файлу: ${file.name}`));
+        reader.readAsText(file);
+      });
+    });
+
+    Promise.all(readFiles)
+      .then(contents => {
+        setFileContents(contents);
         setStatus({
-          message: 'Файл успішно прочитано',
+          message: `Успішно прочитано ${contents.length} файл(ів)`,
           type: 'success'
         });
-      } catch (error) {
-        console.error('Помилка читання файлу:', error);
+      })
+      .catch(error => {
+        console.error('Помилка читання файлів:', error);
         setStatus({
-          message: `Помилка читання JSON файлу: ${error.message}`,
+          message: `Помилка читання файлів: ${error.message}`,
           type: 'error'
         });
-        setFileContent(null);
-      }
-    };
-    reader.onerror = () => {
-      setStatus({
-        message: 'Помилка читання файлу',
-        type: 'error'
+        setFileContents([]);
+        setSelectedFiles([]);
       });
-    };
-    reader.readAsText(file);
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !fileContent) {
+    if (!selectedFiles.length || !fileContents.length) {
       setStatus({
-        message: 'Будь ласка, виберіть коректний JSON файл',
+        message: 'Будь ласка, виберіть коректні JSON файли',
         type: 'error'
       });
       return;
@@ -101,19 +132,20 @@ function AdminPanel() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${API_URL}/api/test`, fileContent, {
+      const response = await axios.post(`${API_URL}/api/tests/batch`, fileContents, {
         headers: {
-          'Authorization': `Bearer ${password}`
+          'Authorization': `Bearer ${password}`,
+          'Content-Type': 'application/json'
         }
       });
       
       setStatus({
-        message: 'Тест успішно збережено',
+        message: `Успішно збережено ${fileContents.length} тест(ів)`,
         type: 'success'
       });
       
-      setSelectedFile(null);
-      setFileContent(null);
+      setSelectedFiles([]);
+      setFileContents([]);
       const fileInput = document.getElementById('file-input');
       if (fileInput) fileInput.value = '';
       
@@ -128,7 +160,7 @@ function AdminPanel() {
         setIsAuthenticated(false);
       } else {
         setStatus({
-          message: `Помилка при збереженні тесту: ${error.response?.data?.message || error.message}`,
+          message: `Помилка при збереженні тестів: ${error.response?.data?.message || error.message}`,
           type: 'error'
         });
       }
@@ -137,9 +169,22 @@ function AdminPanel() {
     }
   };
 
-  const handleDeleteClick = (test) => {
-    setTestToDelete(test);
-    setShowDeleteModal(true);
+  const handleDeleteClick = async (test) => {
+    try {
+      const response = await axios.get(`${API_URL}/api/test/${test._id}`, {
+        headers: {
+          'Authorization': `Bearer ${password}`
+        }
+      });
+      setTestToDelete(response.data);
+      setShowDeleteModal(true);
+    } catch (error) {
+      console.error('Помилка при завантаженні тесту:', error);
+      setStatus({
+        message: 'Помилка при завантаженні тесту',
+        type: 'error'
+      });
+    }
   };
 
   const cancelDelete = () => {
@@ -224,6 +269,11 @@ function AdminPanel() {
     <div className="admin-panel">
       <div className="header">
         <h1>Адмін-панель</h1>
+        {isAuthenticated && (
+          <button onClick={handleLogout} className="logout-btn">
+            Вийти
+          </button>
+        )}
       </div>
 
       <div className="upload-section">
@@ -249,18 +299,25 @@ function AdminPanel() {
               className="file-input"
               id="file-input"
               disabled={isLoading}
+              multiple
             />
             <label htmlFor="file-input" className="file-label" style={{ opacity: isLoading ? 0.7 : 1 }}>
-              Вибрати файл з тестом
+              Вибрати файли з тестами
             </label>
-            {selectedFile && <p className="selected-file">{selectedFile.name}</p>}
+            {selectedFiles.length > 0 && (
+              <div className="selected-files">
+                {selectedFiles.map((file, index) => (
+                  <p key={index} className="selected-file">{file.name}</p>
+                ))}
+              </div>
+            )}
 
             <button
               className="upload-btn"
               onClick={handleUpload}
-              disabled={!selectedFile || !fileContent || isLoading}
+              disabled={!selectedFiles.length || !fileContents.length || isLoading}
             >
-              {isLoading ? 'Завантаження...' : 'Зберегти тест'}
+              {isLoading ? 'Завантаження...' : `Зберегти тести (${selectedFiles.length})`}
             </button>
           </>
         )}

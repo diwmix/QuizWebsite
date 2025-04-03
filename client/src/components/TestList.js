@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import QuestionCard from './QuestionCard';
 import '../styles/TestList.css';
@@ -21,17 +21,24 @@ function TestList() {
   const [testToStart, setTestToStart] = useState(null);
   const [status, setStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    const savedState = localStorage.getItem('testState');
-    if (savedState) {
-      const { selectedTest, currentQuestion, answers, result } = JSON.parse(savedState);
-      setSelectedTest(selectedTest);
-      setCurrentQuestion(currentQuestion);
-      setAnswers(answers);
-      setResult(result);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      const savedState = localStorage.getItem('testState');
+      if (savedState) {
+        const { selectedTest, currentQuestion, answers, result } = JSON.parse(savedState);
+        setSelectedTest(selectedTest);
+        setCurrentQuestion(currentQuestion);
+        setAnswers(answers);
+        setResult(result);
+      }
+
+      if (!savedState || !JSON.parse(savedState)?.selectedTest) {
+        fetchTests();
+      }
     }
-    fetchTests();
   }, []);
 
   useEffect(() => {
@@ -103,7 +110,7 @@ function TestList() {
     return tests.filter(test => test.subject === subject);
   };
 
-  const handleStartClick = (test) => {
+  const handleStartClick = async (test) => {
     if (test.isLocked) {
       setStatus({
         message: 'Цей тест заблокований',
@@ -111,8 +118,21 @@ function TestList() {
       });
       return;
     }
-    setTestToStart(test);
-    setShowStartModal(true);
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`${API_URL}/api/test/${test._id}`);
+      const fullTest = response.data;
+      setTestToStart(fullTest);
+      setShowStartModal(true);
+    } catch (error) {
+      console.error('Помилка при завантаженні тесту:', error);
+      setStatus({
+        message: 'Помилка при завантаженні тесту',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const confirmStart = () => {
@@ -204,120 +224,134 @@ function TestList() {
       });
       return;
     }
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: test.subject,
-                bold: true,
-                size: 36,
-                font: "Calibri",
-                color: "8B4513",
-              }),
-            ],
-            spacing: {
-              after: 300,
-              line: 376,
-            },
-            alignment: "center",
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: test.theme,
-                bold: true,
-                size: 32,
-                font: "Calibri",
-                color: "CD853F",
-              }),
-            ],
-            spacing: {
-              after: 400,
-              line: 376,
-            },
-            alignment: "center",
-          }),
-          ...test.questions.map((question, index) => [
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`${API_URL}/api/test/${test._id}`);
+      const fullTest = response.data;
+      
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Питання ${index + 1}. `,
+                  text: fullTest.subject,
                   bold: true,
-                  size: 28,
+                  size: 36,
                   font: "Calibri",
                   color: "8B4513",
                 }),
-                new TextRun({
-                  text: question.text,
-                  size: 28,
-                  font: "Calibri",
-                  color: "000000",
-                }),
               ],
               spacing: {
-                before: 400,
-                after: 200,
+                after: 300,
                 line: 376,
-              },
-            }),
-            ...question.answers.map((answer, ansIndex) => 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `${String.fromCharCode(65 + ansIndex)}) `,
-                    bold: true,
-                    size: 26,
-                    font: "Calibri",
-                    color: answer.id === question.correct_answer_id ? "006400" : "000000",
-                  }),
-                  new TextRun({
-                    text: answer.text,
-                    size: 26,
-                    font: "Calibri",
-                    color: answer.id === question.correct_answer_id ? "006400" : "000000",
-                    bold: answer.id === question.correct_answer_id,
-                  }),
-                ],
-                spacing: {
-                  before: 100,
-                  after: 100,
-                  line: 376,
-                },
-                indent: {
-                  left: 720,
-                },
-              })
-            ),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "⎯".repeat(50),
-                  color: "DEB887",
-                  size: 24,
-                }),
-              ],
-              spacing: {
-                before: 200,
-                after: 200,
               },
               alignment: "center",
             }),
-          ]).flat(),
-        ],
-      }],
-    });
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: fullTest.theme,
+                  bold: true,
+                  size: 32,
+                  font: "Calibri",
+                  color: "CD853F",
+                }),
+              ],
+              spacing: {
+                after: 400,
+                line: 376,
+              },
+              alignment: "center",
+            }),
+            ...fullTest.questions.map((question, index) => [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Питання ${index + 1}. `,
+                    bold: true,
+                    size: 28,
+                    font: "Calibri",
+                    color: "8B4513",
+                  }),
+                  new TextRun({
+                    text: question.text,
+                    size: 28,
+                    font: "Calibri",
+                    color: "000000",
+                  }),
+                ],
+                spacing: {
+                  before: 400,
+                  after: 200,
+                  line: 376,
+                },
+              }),
+              ...question.answers.map((answer, ansIndex) => 
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `${String.fromCharCode(65 + ansIndex)}) `,
+                      bold: true,
+                      size: 26,
+                      font: "Calibri",
+                      color: answer.id === question.correct_answer_id ? "006400" : "000000",
+                    }),
+                    new TextRun({
+                      text: answer.text,
+                      size: 26,
+                      font: "Calibri",
+                      color: answer.id === question.correct_answer_id ? "006400" : "000000",
+                      bold: answer.id === question.correct_answer_id,
+                    }),
+                  ],
+                  spacing: {
+                    before: 100,
+                    after: 100,
+                    line: 376,
+                  },
+                  indent: {
+                    left: 720,
+                  },
+                })
+              ),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "⎯".repeat(50),
+                    color: "DEB887",
+                    size: 24,
+                  }),
+                ],
+                spacing: {
+                  before: 200,
+                  after: 200,
+                },
+                alignment: "center",
+              }),
+            ]).flat(),
+          ],
+        }],
+      });
 
-    const blob = await Packer.toBlob(doc);
-    const transliteratedSubject = transliterate(test.subject);
-    const transliteratedTheme = transliterate(test.theme);
-    const fileName = `${transliteratedSubject}_${transliteratedTheme}.docx`
-      .replace(/[^a-zA-Z0-9]/g, '_')
-      .replace(/_+/g, '_') // Замінюємо множинні підкреслення на одне
-      .replace(/^_|_$/g, ''); // Видаляємо підкреслення на початку і в кінці
-    saveAs(blob, fileName);
+      const blob = await Packer.toBlob(doc);
+      const transliteratedSubject = transliterate(fullTest.subject);
+      const transliteratedTheme = transliterate(fullTest.theme);
+      const fileName = `${transliteratedSubject}_${transliteratedTheme}.docx`
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error('Помилка при завантаженні тесту:', error);
+      setStatus({
+        message: 'Помилка при завантаженні тесту',
+        type: 'error'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredTests = tests.filter(test => {
@@ -434,7 +468,7 @@ function TestList() {
             <h3>{test.subject}</h3>
             <p className="theme">{test.theme}</p>
             <p className="questions-count">
-              Кількість питань: {test.questions.length}
+              Кількість питань: {test.questions?.length || 0}
             </p>
             {test.isLocked && (
               <div className="lock-icon">
@@ -447,14 +481,14 @@ function TestList() {
                 onClick={() => handleStartClick(test)}
                 disabled={test.isLocked}
               >
-                {test.isLocked ? 'Тест недоступний' : 'Почати тест'}
+                {test.isLocked ? 'Тест заблокований' : 'Почати тест'}
               </button>
               <button
                 className={`download-btn ${test.isLocked ? 'locked' : ''}`}
                 onClick={() => generateWordFile(test)}
                 disabled={test.isLocked}
               >
-                {test.isLocked ? 'База тестів недоступна' : 'База тестів'}
+                {test.isLocked ? 'База тестів заблокована' : 'База тестів'}
               </button>
             </div>
           </div>
