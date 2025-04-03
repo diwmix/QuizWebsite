@@ -207,6 +207,19 @@ function AdminPanel() {
     }
   };
 
+  const SkeletonTestItem = () => (
+    <div className="skeleton-test-item">
+      <div className="skeleton-title"></div>
+      <div className="skeleton-theme"></div>
+      <div className="skeleton-date"></div>
+      <div className="skeleton-count"></div>
+      <div className="skeleton-buttons">
+        <div className="skeleton-button"></div>
+        <div className="skeleton-button"></div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="admin-panel">
       <div className="header">
@@ -262,7 +275,7 @@ function AdminPanel() {
       <div className="tests-list">
         <h2>Збережені тести:</h2>
         {isLoading ? (
-          <div className="loading">Завантаження...</div>
+          [...Array(3)].map((_, index) => <SkeletonTestItem key={index} />)
         ) : tests.length > 0 ? (
           tests.map((test) => (
             <div key={test._id} className="test-item">

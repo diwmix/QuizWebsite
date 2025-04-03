@@ -643,3 +643,110 @@
     font-size: 2.2rem;
   }
 }
+
+/* Skeleton Loading */
+.skeleton-test-item {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 25px;
+  margin: 15px 0;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.15);
+  border: 3px solid #EAC4B9;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-test-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-title {
+  width: 70%;
+  height: 28px;
+  background: #EAC4B9;
+  border-radius: 14px;
+  margin-bottom: 15px;
+}
+
+.skeleton-theme {
+  width: 50%;
+  height: 22px;
+  background: #F0D9CF;
+  border-radius: 11px;
+  margin-bottom: 15px;
+}
+
+.skeleton-date {
+  width: 40%;
+  height: 18px;
+  background: #F0D9CF;
+  border-radius: 9px;
+  margin-bottom: 10px;
+}
+
+.skeleton-count {
+  width: 30%;
+  height: 18px;
+  background: #F0D9CF;
+  border-radius: 9px;
+  margin-bottom: 20px;
+}
+
+.skeleton-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.skeleton-button {
+  width: 50%;
+  height: 45px;
+  background: #EAC4B9;
+  border-radius: 15px;
+}
+
+@media (max-width: 480px) {
+  .skeleton-test-item {
+    padding: 15px;
+    margin: 10px 0;
+  }
+
+  .skeleton-title {
+    height: 24px;
+    margin-bottom: 12px;
+  }
+
+  .skeleton-theme {
+    height: 20px;
+    margin-bottom: 12px;
+  }
+
+  .skeleton-date,
+  .skeleton-count {
+    height: 16px;
+    margin-bottom: 8px;
+  }
+
+  .skeleton-button {
+    height: 40px;
+  }
+}

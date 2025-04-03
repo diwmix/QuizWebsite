@@ -20,6 +20,7 @@ function TestList() {
   const [showStartModal, setShowStartModal] = useState(false);
   const [testToStart, setTestToStart] = useState(null);
   const [status, setStatus] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const savedState = localStorage.getItem('testState');
@@ -319,19 +320,15 @@ function TestList() {
     saveAs(blob, fileName);
   };
 
-  if (isLoading) {
-    return (
-      <div className="loading">
-        Завантаження тестів...
-        <p className="loading-subtext">
-          Зачекайте, будь ласка. Перше завантаження може тривати до хвилини
-        </p>
-        <p className="loading-subtext">
-          Якщо завантаження триває довше, спробуйте оновити сторінку
-        </p>
-      </div>
-    );
-  }
+  const filteredTests = tests.filter(test => {
+    const matchesSearch = searchQuery === '' || 
+      test.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      test.theme.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesSubject = selectedSubject === null || test.subject === selectedSubject;
+    
+    return matchesSearch && matchesSubject;
+  });
 
   if (showError && error) {
     return (
@@ -378,6 +375,16 @@ function TestList() {
 
   const subjects = getUniqueSubjects();
 
+  const SkeletonCard = () => (
+    <div className="skeleton-card">
+      <div className="skeleton-title"></div>
+      <div className="skeleton-theme"></div>
+      <div className="skeleton-count"></div>
+      <div className="skeleton-button"></div>
+      <div className="skeleton-button"></div>
+    </div>
+  );
+
   return (
     <div className="test-list">
       <h1>ІФНМУ Тести</h1>
@@ -410,9 +417,19 @@ function TestList() {
           </button>
         ))}
       </div>
-
+      <div className="search-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Пошук за назвою предмету або темою..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
       <div className="tests-grid">
-        {(selectedSubject ? getTestsBySubject(selectedSubject) : tests).map(test => (
+        {isLoading ? (
+          [...Array(6)].map((_, index) => <SkeletonCard key={index} />)
+        ) : filteredTests.map(test => (
           <div key={test._id} className="test-card">
             <h3>{test.subject}</h3>
             <p className="theme">{test.theme}</p>
@@ -444,10 +461,10 @@ function TestList() {
         ))}
       </div>
       
-      {(!selectedSubject && tests.length === 0) && (
+      {(!selectedSubject && filteredTests.length === 0 && !isLoading) && (
         <div className="no-tests">Немає доступних тестів</div>
       )}
-      {(selectedSubject && getTestsBySubject(selectedSubject).length === 0) && (
+      {(selectedSubject && filteredTests.length === 0 && !isLoading) && (
         <div className="no-tests">Немає тестів для вибраного предмету</div>
       )}
       
