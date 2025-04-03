@@ -468,7 +468,7 @@ function TestList() {
             <h3>{test.subject}</h3>
             <p className="theme">{test.theme}</p>
             <p className="questions-count">
-              Кількість питань: {test.questions?.length || 0}
+              Кількість питань: {test.questionsCount}
             </p>
             {test.isLocked && (
               <div className="lock-icon">

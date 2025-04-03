@@ -76,6 +76,7 @@ const testSchema = new mongoose.Schema({
   subject: String,
   theme: String,
   questions: [questionSchema],
+  questionsCount: { type: Number, default: 0 },
   isLocked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
@@ -89,6 +90,7 @@ const apiRouter = express.Router();
 apiRouter.post('/test', authenticateAdmin, async (req, res) => {
   try {
     const testData = req.body;
+    testData.questionsCount = testData.questions?.length || 0;
     
     const newTest = new Test(testData);
     const savedTest = await newTest.save();
@@ -103,7 +105,7 @@ apiRouter.post('/test', authenticateAdmin, async (req, res) => {
 apiRouter.get('/tests', async (req, res) => {
   try {
     const tests = await Test.find()
-      .select('-questions') // Виключаємо поле questions
+      .select('-questions')
       .sort({ createdAt: -1 });
     res.json(tests);
   } catch (error) {
@@ -171,8 +173,13 @@ apiRouter.post('/tests/batch', authenticateAdmin, async (req, res) => {
       });
     }
 
+    const testsToSave = testsData.map(testData => ({
+      ...testData,
+      questionsCount: testData.questions?.length || 0
+    }));
+
     const savedTests = await Promise.all(
-      testsData.map(testData => {
+      testsToSave.map(testData => {
         const newTest = new Test(testData);
         return newTest.save();
       })

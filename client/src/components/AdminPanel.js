@@ -342,7 +342,7 @@ function AdminPanel() {
                 Додано: {new Date(test.createdAt).toLocaleString()}
               </p>
               <p className="test-questions">
-                Кількість питань: {test.questions.length}
+                Кількість питань: {test.questionsCount}
               </p>
               {isAuthenticated && (
                 <div className="test-actions">
