@@ -8,6 +8,7 @@ function QuestionCard({
   selectedAnswer, 
   onAnswerSelect, 
   onNext,
+  onPrevious,
   onExit 
 }) {
   const [showCorrect, setShowCorrect] = useState(false);
@@ -79,11 +80,18 @@ function QuestionCard({
           Вийти
         </button>
         <button
+          className="back-button"
+          onClick={onPrevious}
+          disabled={currentQuestion === 0 || showCorrect}
+        >
+          Назад
+        </button>
+        <button
           className="next-button"
           onClick={handleNext}
           disabled={!selectedAnswer}
         >
-          {showCorrect ? 'Наступне питання' : 'Показати відповідь'}
+          {showCorrect ? 'Вперед' : 'Відповідь'}
         </button>
       </div>
 

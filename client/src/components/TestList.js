@@ -186,6 +186,12 @@ function TestList() {
     }
   };
 
+  const previousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(prev => prev - 1);
+    }
+  };
+
   const resetTest = () => {
     setSelectedTest(null);
     setCurrentQuestion(0);
@@ -386,6 +392,7 @@ function TestList() {
         selectedAnswer={answers[question.id]}
         onAnswerSelect={handleAnswer}
         onNext={nextQuestion}
+        onPrevious={previousQuestion}
         onExit={resetTest}
       />
     );

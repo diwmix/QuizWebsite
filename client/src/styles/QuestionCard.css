@@ -159,6 +159,7 @@
 }
 
 .next-button,
+.back-button,
 .exit-button {
   border-radius: var(--border-radius-sm);
   font-size: 1.25rem;
@@ -166,30 +167,24 @@
   font-family: var(--font-family);
 }
 
-.next-button {
+.next-button, .back-button, .exit-button{
   background: var(--primary-color);
   color: var(--white);
   width: 100%;
-  max-width: 200px;
-  box-shadow: 0 4px 12px var(--shadow-color);
-}
-
-.exit-button {
-  background: var(--primary-color);
-  color: var(--white);
-  width: 100%;
-  max-width: 150px;
+  max-width: 160px;
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
 .next-button:hover:not(:disabled),
+.back-button:hover:not(:disabled),
 .exit-button:hover {
   background: var(--primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px var(--shadow-color);
 }
 
-.next-button:disabled {
+.next-button:disabled,
+.back-button:disabled {
   background: var(--primary-lighter);
   cursor: not-allowed;
   transform: none;
@@ -293,23 +288,21 @@
   }
 
   .navigation-buttons {
-    flex-direction: row;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
   }
 
   .exit-button,
+  .back-button,
   .next-button {
     height: 45px;
     font-size: 1rem;
     padding: 0 var(--spacing-md);
   }
 
-  .exit-button {
-    max-width: 100px;
-  }
-
+  .back-button,
   .next-button {
     max-width: 160px;
   }
