@@ -130,17 +130,15 @@ apiRouter.post('/test', authenticateAdmin, async (req, res) => {
 // Отримання всіх тестів (захищений доступ)
 apiRouter.get('/tests', authenticateToken, async (req, res) => {
   try {
-    const tests = await Test.find()
-      .select('-questions')
-      .sort({ createdAt: -1 });
+    const tests = await Test.find().select('-questions');
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: 'Помилка при отриманні тестів', error: error.message });
   }
 });
 
-// Отримання повного тесту за ID (захищений доступ)
-apiRouter.get('/test/:id', authenticateToken, async (req, res) => {
+// Отримання повного тесту за ID (публічний доступ)
+apiRouter.get('/test/:id', async (req, res) => {
   try {
     const test = await Test.findById(req.params.id);
     if (!test) {
