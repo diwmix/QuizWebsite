@@ -4,29 +4,92 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
-const { authenticateToken } = require('./middleware/auth');
+const Test = require('./models/Test');
+const { authenticateToken, authenticateAdmin } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
+
+// Перевірка змінних середовища
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`Помилка: Відсутні змінні середовища: ${missingEnvVars.join(', ')}`);
+  // Не завершуємо процес, але логуємо помилку
+}
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+// Збільшуємо ліміт розміру тіла запиту
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Налаштування таймаутів
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    res.status(408).json({ message: 'Request timeout' });
+  });
+  next();
+});
 
 // Middleware
 app.use(cors({
   origin: ['https://ifnmu.vercel.app', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
-app.use(express.json());
-
-// Add a preflight OPTIONS handler for all routes
-app.options('*', cors());
-
 // Підключення до MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+  family: 4,
+  retryWrites: true,
+  w: 'majority',
+  maxPoolSize: 10,
+  minPoolSize: 5
+})
+.then(() => {
+  console.log('Connected to MongoDB Atlas');
+})
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// Обробка помилок підключення до MongoDB
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+  // Спроба перепідключення
+  setTimeout(() => {
+    console.log('Attempting to reconnect to MongoDB...');
+    mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      family: 4,
+      retryWrites: true,
+      w: 'majority',
+      maxPoolSize: 10,
+      minPoolSize: 5
+    });
+  }, 5000);
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected');
+});
 
 // Middleware для перевірки автентифікації
 const authenticateAdmin = (req, res, next) => {
@@ -78,7 +141,7 @@ const testSchema = new mongoose.Schema({
 
 const Test = mongoose.model('Test', testSchema);
 
-// API роути
+// Створюємо роутер для API
 const apiRouter = express.Router();
 
 // Ендпоінт для збереження тесту (захищений)
@@ -201,7 +264,36 @@ app.use('/api/auth', authRoutes);
 // Обробка помилок
 app.use((err, req, res, next) => {
   console.error('Помилка сервера:', err);
-  res.status(500).json({ message: 'Внутрішня помилка сервера', error: err.message });
+  
+  // Перевірка на помилку JWT
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ 
+      message: 'Недійсний токен', 
+      error: err.message 
+    });
+  }
+  
+  // Перевірка на помилку валідації
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ 
+      message: 'Помилка валідації', 
+      error: err.message 
+    });
+  }
+  
+  // Перевірка на помилку MongoDB
+  if (err.name === 'MongoError' || err.name === 'MongoServerError') {
+    return res.status(500).json({ 
+      message: 'Помилка бази даних', 
+      error: err.message 
+    });
+  }
+  
+  // Загальна помилка сервера
+  res.status(500).json({ 
+    message: 'Внутрішня помилка сервера', 
+    error: process.env.NODE_ENV === 'production' ? 'Щось пішло не так' : err.message 
+  });
 });
 
 // Обробка невідомих маршрутів
