@@ -213,23 +213,17 @@ function TestList() {
   };
 
   const generateWordFile = async (test) => {
-    if (!test) {
+    if (test.isLocked) {
       setStatus({
-        message: 'Помилка: тест не знайдено',
+        message: 'Цей тест заблокований',
         type: 'error'
       });
       return;
     }
     try {
       setIsLoading(true);
-      const fullTest = await getData(`${API_URL}/api/test/${test._id}`);
-      if (!fullTest) {
-        setStatus({
-          message: 'Помилка: не вдалося отримати дані тесту',
-          type: 'error'
-        });
-        return;
-      }
+      const response = await axios.get(`${API_URL}/api/test/${test._id}`);
+      const fullTest = response.data;
       
       const doc = new Document({
         sections: [{

@@ -4,8 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
-const Test = require('./models/Test');
-const { authenticateToken, authenticateAdmin } = require('./middleware/auth');
+const { authenticateToken } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 
 // Перевірка змінних середовища
@@ -20,18 +19,6 @@ if (missingEnvVars.length > 0) {
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Збільшуємо ліміт розміру тіла запиту
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Налаштування таймаутів
-app.use((req, res, next) => {
-  res.setTimeout(30000, () => {
-    res.status(408).json({ message: 'Request timeout' });
-  });
-  next();
-});
-
 // Middleware
 app.use(cors({
   origin: ['https://ifnmu.vercel.app', 'http://localhost:3000'],
@@ -42,24 +29,25 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
+app.use(express.json());
+
+// Add a preflight OPTIONS handler for all routes
+app.options('*', (req, res) => {
+  res.status(204).end();
+});
+
 // Підключення до MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 30000,
-  family: 4,
-  retryWrites: true,
-  w: 'majority',
-  maxPoolSize: 10,
-  minPoolSize: 5
+  serverSelectionTimeoutMS: 5000, // Таймаут підключення 5 секунд
 })
 .then(() => {
-  console.log('Connected to MongoDB Atlas');
+  console.log('Connected to MongoDB');
 })
 .catch(err => {
   console.error('MongoDB connection error:', err);
+  // Не завершуємо процес, але логуємо помилку
 });
 
 // Обробка помилок підключення до MongoDB
@@ -69,26 +57,6 @@ mongoose.connection.on('error', err => {
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
-  // Спроба перепідключення
-  setTimeout(() => {
-    console.log('Attempting to reconnect to MongoDB...');
-    mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      family: 4,
-      retryWrites: true,
-      w: 'majority',
-      maxPoolSize: 10,
-      minPoolSize: 5
-    });
-  }, 5000);
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected');
 });
 
 // Middleware для перевірки автентифікації
@@ -141,7 +109,7 @@ const testSchema = new mongoose.Schema({
 
 const Test = mongoose.model('Test', testSchema);
 
-// Створюємо роутер для API
+// API роути
 const apiRouter = express.Router();
 
 // Ендпоінт для збереження тесту (захищений)
