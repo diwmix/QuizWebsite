@@ -2,6 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
+const { authenticateToken } = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,11 +18,15 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(express.json());
+
 // Add a preflight OPTIONS handler for all routes
 app.options('*', cors());
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Підключення до MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // Middleware для перевірки автентифікації
 const authenticateAdmin = (req, res, next) => {
@@ -40,24 +48,6 @@ const authenticateAdmin = (req, res, next) => {
 // Базовий роут для перевірки
 app.get('/', (req, res) => {
   res.json({ message: 'API працює' });
-});
-
-console.log('Підключення до MongoDB...');
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('MongoDB успішно підключено');
-}).catch((err) => {
-  console.error('Помилка підключення до MongoDB:', err);
-});
-
-const db = mongoose.connection;
-db.on('error', (err) => {
-  console.error('MongoDB помилка підключення:', err);
-});
-db.once('open', () => {
-  console.log('MongoDB підключення відкрито');
 });
 
 // Схема для відповіді
@@ -106,8 +96,8 @@ apiRouter.post('/test', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Отримання всіх тестів (публічний доступ)
-apiRouter.get('/tests', async (req, res) => {
+// Отримання всіх тестів (захищений доступ)
+apiRouter.get('/tests', authenticateToken, async (req, res) => {
   try {
     const tests = await Test.find()
       .select('-questions')
@@ -118,8 +108,8 @@ apiRouter.get('/tests', async (req, res) => {
   }
 });
 
-// Отримання повного тесту за ID (публічний доступ)
-apiRouter.get('/test/:id', async (req, res) => {
+// Отримання повного тесту за ID (захищений доступ)
+apiRouter.get('/test/:id', authenticateToken, async (req, res) => {
   try {
     const test = await Test.findById(req.params.id);
     if (!test) {
@@ -205,6 +195,9 @@ apiRouter.post('/tests/batch', authenticateAdmin, async (req, res) => {
 // Використовуємо API роути
 app.use('/api', apiRouter);
 
+// Використовуємо маршрути аутентифікації
+app.use('/api/auth', authRoutes);
+
 // Обробка помилок
 app.use((err, req, res, next) => {
   console.error('Помилка сервера:', err);
@@ -216,7 +209,6 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Маршрут не знайдено' });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Сервер запущено на порту ${port}`);
-  console.log(`Доступний за адресою: http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

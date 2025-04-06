@@ -1,71 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
 import '../styles/AdminPanel.css';
+import { getData, postData, putData, deleteData } from '../utils/api';
+import { AuthContext } from '../App';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const ADMIN_PASSWORD = 'snVeG97C69';
 
 function AdminPanel() {
+  const { user, handleLogout } = useContext(AuthContext);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileContents, setFileContents] = useState([]);
   const [tests, setTests] = useState([]);
   const [status, setStatus] = useState({ message: '', type: '' });
   const [isLoading, setIsLoading] = useState(false);
-  const [password, setPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
-  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     fetchTests();
-    // Перевіряємо збережений пароль при завантаженні
-    const savedPassword = localStorage.getItem('adminPassword');
-    if (savedPassword === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setPassword(savedPassword);
-    }
   }, []);
 
   const fetchTests = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_URL}/api/tests`);
-      setTests(response.data);
+      const data = await getData(`${API_URL}/api/tests`);
+      setTests(data);
       setStatus({ message: '', type: '' });
     } catch (error) {
       console.error('Помилка при завантаженні тестів:', error);
       setStatus({
-        message: `Помилка при завантаженні тестів: ${error.response?.data?.message || error.message}`,
+        message: `Помилка при завантаженні тестів: ${error.message || 'Невідома помилка'}`,
         type: 'error'
       });
       setTests([]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setPasswordError('');
-      setStatus({ message: 'Авторизовано успішно', type: 'success' });
-      // Зберігаємо пароль в localStorage
-      localStorage.setItem('adminPassword', password);
-    } else {
-      setPasswordError('Невірний пароль');
-      setTimeout(() => {
-        setPassword('');
-      }, 1000);
-    }
-  };
-
-  // Додаємо функцію для виходу
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setPassword('');
-    localStorage.removeItem('adminPassword');
   };
 
   const handleFileSelect = (event) => {
@@ -122,22 +91,9 @@ function AdminPanel() {
       return;
     }
 
-    if (!isAuthenticated || !password) {
-      setStatus({
-        message: 'Необхідно ввести пароль',
-        type: 'error'
-      });
-      return;
-    }
-
     try {
       setIsLoading(true);
-      const response = await axios.post(`${API_URL}/api/tests/batch`, fileContents, {
-        headers: {
-          'Authorization': `Bearer ${password}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await postData(`${API_URL}/api/tests/batch`, fileContents);
       
       setStatus({
         message: `Успішно збережено ${fileContents.length} тест(ів)`,
@@ -152,18 +108,10 @@ function AdminPanel() {
       await fetchTests();
     } catch (error) {
       console.error('Помилка при збереженні:', error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        setStatus({
-          message: 'Невірний пароль або доступ заборонено',
-          type: 'error'
-        });
-        setIsAuthenticated(false);
-      } else {
-        setStatus({
-          message: `Помилка при збереженні тестів: ${error.response?.data?.message || error.message}`,
-          type: 'error'
-        });
-      }
+      setStatus({
+        message: `Помилка при збереженні тестів: ${error.message || 'Невідома помилка'}`,
+        type: 'error'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -171,12 +119,8 @@ function AdminPanel() {
 
   const handleDeleteClick = async (test) => {
     try {
-      const response = await axios.get(`${API_URL}/api/test/${test._id}`, {
-        headers: {
-          'Authorization': `Bearer ${password}`
-        }
-      });
-      setTestToDelete(response.data);
+      const data = await getData(`${API_URL}/api/test/${test._id}`);
+      setTestToDelete(data);
       setShowDeleteModal(true);
     } catch (error) {
       console.error('Помилка при завантаженні тесту:', error);
@@ -193,15 +137,11 @@ function AdminPanel() {
   };
 
   const confirmDelete = async () => {
-    if (!testToDelete || !isAuthenticated) return;
+    if (!testToDelete) return;
 
     try {
       setIsLoading(true);
-      await axios.delete(`${API_URL}/api/test/${testToDelete._id}`, {
-        headers: {
-          'Authorization': `Bearer ${password}`
-        }
-      });
+      await deleteData(`${API_URL}/api/test/${testToDelete._id}`);
       
       setStatus({
         message: 'Тест успішно видалено',
@@ -212,7 +152,7 @@ function AdminPanel() {
     } catch (error) {
       console.error('Помилка при видаленні тесту:', error);
       setStatus({
-        message: `Помилка при видаленні тесту: ${error.response?.data?.message || error.message}`,
+        message: `Помилка при видаленні тесту: ${error.message || 'Невідома помилка'}`,
         type: 'error'
       });
     } finally {
@@ -225,15 +165,7 @@ function AdminPanel() {
   const handleLockTest = async (testId, isLocked) => {
     try {
       setIsLoading(true);
-      const response = await axios.put(`${API_URL}/api/test/${testId}/lock`, 
-        { isLocked },
-        {
-          headers: {
-            'Authorization': `Bearer ${password}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      await putData(`${API_URL}/api/test/${testId}/lock`, { isLocked });
       
       setStatus({
         message: `Тест успішно ${isLocked ? 'заблоковано' : 'розблоковано'}`,
@@ -244,7 +176,7 @@ function AdminPanel() {
     } catch (error) {
       console.error('Помилка при блокуванні тесту:', error);
       setStatus({
-        message: `Помилка при блокуванні тесту: ${error.response?.data?.message || error.message}`,
+        message: `Помилка при блокуванні тесту: ${error.message || 'Невідома помилка'}`,
         type: 'error'
       });
     } finally {
@@ -269,7 +201,7 @@ function AdminPanel() {
     <div className="admin-panel">
       <div className="header">
         <h1>Адмін-панель</h1>
-        {isAuthenticated && (
+        {user && (
           <button onClick={handleLogout} className="logout-btn">
             Вийти
           </button>
@@ -277,20 +209,7 @@ function AdminPanel() {
       </div>
 
       <div className="upload-section">
-        {!isAuthenticated ? (
-          <form onSubmit={handlePasswordSubmit} className="auth-form">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Введіть пароль"
-              className="password-input"
-            />
-            <button type="submit" className="auth-btn">
-              Увійти
-            </button>
-          </form>
-        ) : (
+        {user && (
           <>
             <input
               type="file"
@@ -344,7 +263,7 @@ function AdminPanel() {
               <p className="test-questions">
                 Кількість питань: {test.questionsCount}
               </p>
-              {isAuthenticated && (
+              {user && (
                 <div className="test-actions">
                   <button 
                     className={`lock-btn ${test.isLocked ? 'locked' : ''}`}

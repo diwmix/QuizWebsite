@@ -65,49 +65,6 @@
   margin-bottom: var(--spacing-xl);
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-.password-input {
-  padding: var(--spacing-md);
-  border: 2px solid var(--primary-light);
-  border-radius: var(--border-radius-sm);
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-  background: var(--white);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.password-input:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px var(--shadow-color);
-}
-
-.auth-btn {
-  padding: var(--spacing-md);
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px var(--shadow-color);
-}
-
-.auth-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px var(--shadow-color);
-}
-
 .file-input {
   display: none;
 }
@@ -206,6 +163,27 @@
   background: var(--primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px var(--shadow-color);
+}
+
+.status-message {
+  padding: var(--spacing-md);
+  margin: var(--spacing-md) 0;
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+  font-size: 1.1rem;
+}
+
+.success {
+  background: #E8F5E9;
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+
+.error {
+  background: #FFEBEE;
+  color: #FF5252;
+  border: 2px solid #FF5252;
 }
 
 .tests-list {
@@ -309,27 +287,6 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-}
-
-.status-message {
-  padding: var(--spacing-md);
-  margin: var(--spacing-md) 0;
-  border-radius: var(--border-radius-sm);
-  text-align: center;
-  animation: fadeIn 0.3s ease;
-  font-size: 1.1rem;
-}
-
-.success {
-  background: #E8F5E9;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
-}
-
-.error {
-  background: #FFEBEE;
-  color: #FF5252;
-  border: 2px solid #FF5252;
 }
 
 .no-tests {
@@ -436,22 +393,6 @@
     width: 95%;
   }
 
-  .auth-form {
-    width: 100%;
-  }
-
-  .password-input {
-    padding: var(--spacing-sm);
-    font-size: 1rem;
-  }
-
-  .auth-btn,
-  .file-label,
-  .upload-btn {
-    padding: var(--spacing-sm);
-    font-size: 1rem;
-  }
-
   .test-item {
     padding: var(--spacing-md);
     margin: var(--spacing-sm) 0;
@@ -540,13 +481,6 @@
 
   .tests-list h2 {
     font-size: 1.6rem;
-  }
-
-  .auth-btn,
-  .file-label,
-  .upload-btn {
-    padding: var(--spacing-sm);
-    font-size: 1rem;
   }
 
   .status-message {

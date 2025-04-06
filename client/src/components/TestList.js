@@ -4,6 +4,7 @@ import QuestionCard from './QuestionCard';
 import '../styles/TestList.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
+import { getData, postData } from '../utils/api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -70,28 +71,18 @@ function TestList() {
       setShowError(false);
       setError('');
       
-      const response = await axios.get(`${API_URL}/api/tests`, {
-        timeout: 30000, // 30 секунд таймаут
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
+      const data = await getData(`${API_URL}/api/tests`);
       
-      if (!response.data || !Array.isArray(response.data)) {
+      if (!data || !Array.isArray(data)) {
         throw new Error('Неправильний формат даних від сервера');
       }
       
-      const shuffledTests = shuffleArray(response.data);
+      const shuffledTests = shuffleArray(data);
       setTests(shuffledTests);
       setIsLoading(false);
     } catch (error) {
       console.error('Помилка при завантаженні тестів:', error);
-      const errorMessage = error.response 
-        ? `Помилка сервера: ${error.response.status}` 
-        : error.code === 'ECONNABORTED'
-        ? 'Час очікування відповіді від сервера минув'
-        : 'Помилка підключення до сервера';
+      const errorMessage = error.message || 'Помилка підключення до сервера';
       
       setError(errorMessage);
       setTimeout(() => {
@@ -120,8 +111,7 @@ function TestList() {
     }
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_URL}/api/test/${test._id}`);
-      const fullTest = response.data;
+      const fullTest = await getData(`${API_URL}/api/test/${test._id}`);
       setTestToStart(fullTest);
       setShowStartModal(true);
     } catch (error) {
