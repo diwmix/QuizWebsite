@@ -29,7 +29,9 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-app.use(express.json());
+// Збільшуємо ліміт розміру JSON-даних
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Add a preflight OPTIONS handler for all routes
 app.options('*', (req, res) => {
