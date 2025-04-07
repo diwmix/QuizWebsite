@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
-const { authenticateToken } = require('./middleware/auth');
+const Test = require('./models/Test');
+const { authenticateToken, isAdmin } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 
 // Перевірка змінних середовища
@@ -13,7 +14,6 @@ const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error(`Помилка: Відсутні змінні середовища: ${missingEnvVars.join(', ')}`);
-  // Не завершуємо процес, але логуємо помилку
 }
 
 const app = express();
@@ -42,14 +42,13 @@ app.options('*', (req, res) => {
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000, // Таймаут підключення 5 секунд
+  serverSelectionTimeoutMS: 5000,
 })
 .then(() => {
   console.log('Connected to MongoDB');
 })
 .catch(err => {
   console.error('MongoDB connection error:', err);
-  // Не завершуємо процес, але логуємо помилку
 });
 
 // Обробка помилок підключення до MongoDB
@@ -61,61 +60,16 @@ mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
 });
 
-// Middleware для перевірки автентифікації
-const authenticateAdmin = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    return res.status(401).json({ message: 'Необхідна автентифікація' });
-  }
-
-  const password = authHeader.split(' ')[1];
-  
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(403).json({ message: 'Доступ заборонено' });
-  }
-
-  next();
-};
-
 // Базовий роут для перевірки
 app.get('/', (req, res) => {
   res.json({ message: 'API працює' });
 });
 
-// Схема для відповіді
-const answerSchema = new mongoose.Schema({
-  id: String,
-  text: String
-});
-
-// Схема для питання
-const questionSchema = new mongoose.Schema({
-  id: String,
-  text: String,
-  answers: [answerSchema],
-  correct_answer_id: String
-});
-
-// Схема для тесту
-const testSchema = new mongoose.Schema({
-  faculty: String,
-  course: String,
-  subject: String,
-  theme: String,
-  questions: [questionSchema],
-  questionsCount: { type: Number, default: 0 },
-  isLocked: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Test = mongoose.model('Test', testSchema);
-
 // API роути
 const apiRouter = express.Router();
 
 // Ендпоінт для збереження тесту (захищений)
-apiRouter.post('/test', authenticateAdmin, async (req, res) => {
+apiRouter.post('/test', authenticateToken, isAdmin, async (req, res) => {
   try {
     const testData = req.body;
     testData.questionsCount = testData.questions?.length || 0;
@@ -153,7 +107,7 @@ apiRouter.get('/test/:id', async (req, res) => {
 });
 
 // Видалення тесту (захищений доступ)
-apiRouter.delete('/test/:id', authenticateAdmin, async (req, res) => {
+apiRouter.delete('/test/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
     const result = await Test.findByIdAndDelete(req.params.id);
     
@@ -168,7 +122,7 @@ apiRouter.delete('/test/:id', authenticateAdmin, async (req, res) => {
 });
 
 // Оновлення статусу блокування тесту (захищений доступ)
-apiRouter.put('/test/:id/lock', authenticateAdmin, async (req, res) => {
+apiRouter.put('/test/:id/lock', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { isLocked } = req.body;
     
@@ -189,7 +143,7 @@ apiRouter.put('/test/:id/lock', authenticateAdmin, async (req, res) => {
 });
 
 // Ендпоінт для пакетного збереження тестів (захищений)
-apiRouter.post('/tests/batch', authenticateAdmin, async (req, res) => {
+apiRouter.post('/tests/batch', authenticateToken, isAdmin, async (req, res) => {
   try {
     const testsData = req.body;
     
@@ -210,16 +164,10 @@ apiRouter.post('/tests/batch', authenticateAdmin, async (req, res) => {
         return newTest.save();
       })
     );
-    
-    res.status(201).json({ 
-      message: `Успішно збережено ${savedTests.length} тест(ів)`,
-      testIds: savedTests.map(test => test._id)
-    });
+
+    res.status(201).json(savedTests);
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Помилка при збереженні тестів', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Помилка при збереженні тестів', error: error.message });
   }
 });
 
@@ -233,7 +181,6 @@ app.use('/api/auth', authRoutes);
 app.use((err, req, res, next) => {
   console.error('Помилка сервера:', err);
   
-  // Перевірка на помилку JWT
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({ 
       message: 'Недійсний токен', 
@@ -241,7 +188,6 @@ app.use((err, req, res, next) => {
     });
   }
   
-  // Перевірка на помилку валідації
   if (err.name === 'ValidationError') {
     return res.status(400).json({ 
       message: 'Помилка валідації', 
@@ -249,7 +195,6 @@ app.use((err, req, res, next) => {
     });
   }
   
-  // Перевірка на помилку MongoDB
   if (err.name === 'MongoError' || err.name === 'MongoServerError') {
     return res.status(500).json({ 
       message: 'Помилка бази даних', 
@@ -257,7 +202,6 @@ app.use((err, req, res, next) => {
     });
   }
   
-  // Загальна помилка сервера
   res.status(500).json({ 
     message: 'Внутрішня помилка сервера', 
     error: process.env.NODE_ENV === 'production' ? 'Щось пішло не так' : err.message 
