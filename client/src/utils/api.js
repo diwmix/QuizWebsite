@@ -19,8 +19,8 @@ export const fetchWithAuth = async (url, options = {}) => {
       headers
     });
     
-    // Якщо отримали помилку 401, перенаправляємо на сторінку логіну
-    if (response.status === 401) {
+    // Якщо отримали помилку 401 або 403, перенаправляємо на сторінку логіну
+    if (response.status === 401 || response.status === 403) {
       // Видаляємо токен і дані користувача
       localStorage.removeItem('token');
       localStorage.removeItem('user');

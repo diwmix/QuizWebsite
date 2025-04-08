@@ -21,7 +21,7 @@ const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    return res.status(403).json({ message: 'Недійсний токен' });
+    return res.status(401).json({ message: 'Недійсний токен' });
   }
 };
 
