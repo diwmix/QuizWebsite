@@ -14,9 +14,26 @@ function AdminPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [openSections, setOpenSections] = useState({
+    users: true,
+    tests: true
+  });
+  
+  // Стан для нового користувача
+  const [newUser, setNewUser] = useState({
+    username: '',
+    password: '',
+    faculty: '',
+    role: 'user'
+  });
 
   useEffect(() => {
     fetchTests();
+    fetchUsers();
   }, []);
 
   const fetchTests = async () => {
@@ -34,6 +51,21 @@ function AdminPanel() {
       setTests([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getData(`${API_URL}/api/auth/users`);
+      setUsers(data);
+      setError(null);
+    } catch (err) {
+      console.error('Помилка при завантаженні користувачів:', err);
+      setError('Не вдалося завантажити список користувачів');
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -184,6 +216,79 @@ function AdminPanel() {
     }
   };
 
+  const handleCreateUser = async (userData) => {
+    try {
+      setLoading(true);
+      await postData(`${API_URL}/api/auth/register`, userData);
+      await fetchUsers();
+      setShowUserModal(false);
+      setStatus({
+        message: 'Користувача успішно створено',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Помилка при створенні користувача:', err);
+      setError('Не вдалося створити користувача');
+      setStatus({
+        message: 'Помилка при створенні користувача',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLockUser = async (userId) => {
+    try {
+      setLoading(true);
+      await putData(`${API_URL}/api/auth/users/${userId}/toggle-lock`);
+      await fetchUsers();
+      setStatus({
+        message: 'Статус користувача успішно змінено',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Помилка при зміні статусу користувача:', err);
+      setError('Не вдалося змінити статус користувача');
+      setStatus({
+        message: 'Помилка при зміні статусу користувача',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Ви впевнені, що хочете видалити цього користувача?')) {
+      try {
+        setLoading(true);
+        await deleteData(`${API_URL}/api/auth/users/${userId}`);
+        await fetchUsers();
+        setStatus({
+          message: 'Користувача успішно видалено',
+          type: 'success'
+        });
+      } catch (err) {
+        console.error('Помилка при видаленні користувача:', err);
+        setError('Не вдалося видалити користувача');
+        setStatus({
+          message: 'Помилка при видаленні користувача',
+          type: 'error'
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const toggleSection = (section) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const SkeletonTestItem = () => (
     <div className="skeleton-test-item">
       <div className="skeleton-title"></div>
@@ -199,93 +304,143 @@ function AdminPanel() {
 
   return (
     <div className="admin-panel">
-      <div className="header">
-        <h1>Адмін-панель</h1>
-        {user && (
-          <button onClick={handleLogout} className="logout-btn">
-            Вийти
-          </button>
-        )}
+      <div className="admin-header">
+        <h1>Панель адміністратора</h1>
+        <button onClick={handleLogout} className="logout-btn">Вийти</button>
       </div>
 
-      <div className="upload-section">
-        {user && (
-          <>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleFileSelect}
-              className="file-input"
-              id="file-input"
-              disabled={isLoading}
-              multiple
-            />
-            <label htmlFor="file-input" className="file-label" style={{ opacity: isLoading ? 0.7 : 1 }}>
-              Вибрати файли з тестами
-            </label>
-            {selectedFiles.length > 0 && (
-              <div className="selected-files">
-                {selectedFiles.map((file, index) => (
-                  <p key={index} className="selected-file">{file.name}</p>
-                ))}
-              </div>
-            )}
+      {status.message && (
+        <div className={`status-message ${status.type}`}>
+          {status.message}
+        </div>
+      )}
 
-            <button
-              className="upload-btn"
-              onClick={handleUpload}
-              disabled={!selectedFiles.length || !fileContents.length || isLoading}
-            >
-              {isLoading ? 'Завантаження...' : `Зберегти тести (${selectedFiles.length})`}
-            </button>
-          </>
-        )}
-
-        {status.message && (
-          <div className={`status-message ${status.type}`}>
-            {status.message}
+      <div className="admin-sections">
+        <div className="admin-section">
+          <div className="section-header" onClick={() => toggleSection('users')}>
+            <h2>Керування користувачами</h2>
+            <span className={`toggle-icon ${openSections.users ? 'open' : ''}`}>▼</span>
           </div>
-        )}
-      </div>
+          <div className={`section-content ${openSections.users ? 'open' : ''}`}>
+            <button className="add-user-btn" onClick={() => setShowUserModal(true)}>
+              Додати користувача
+            </button>
 
-      <div className="tests-list">
-        <h2>Збережені тести:</h2>
-        {isLoading ? (
-          [...Array(3)].map((_, index) => <SkeletonTestItem key={index} />)
-        ) : tests.length > 0 ? (
-          tests.map((test) => (
-            <div key={test._id} className="test-item">
-              <h3>{test.subject}</h3>
-              <p className="test-theme">{test.theme}</p>
-              <p className="test-date">
-                Додано: {new Date(test.createdAt).toLocaleString()}
-              </p>
-              <p className="test-questions">
-                Кількість питань: {test.questionsCount}
-              </p>
-              {user && (
-                <div className="test-actions">
-                  <button 
-                    className={`lock-btn ${test.isLocked ? 'locked' : ''}`}
-                    onClick={() => handleLockTest(test._id, !test.isLocked)}
-                    disabled={isLoading}
-                  >
-                    {test.isLocked ? 'Розблокувати' : 'Заблокувати'}
-                  </button>
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDeleteClick(test)}
-                    disabled={isLoading}
-                  >
-                    Видалити
-                  </button>
-                </div>
+            <div className="users-list">
+              {loading ? (
+                <div className="no-users">Завантаження...</div>
+              ) : error ? (
+                <div className="no-users">Помилка: {error}</div>
+              ) : users.length === 0 ? (
+                <div className="no-users">Немає користувачів</div>
+              ) : (
+                users.map((user) => (
+                  <div key={user._id} className="user-item">
+                    <h3>{user.username}</h3>
+                    <div className="user-faculty">{user.faculty}</div>
+                    <div className="user-role">{user.role}</div>
+                    <div className="user-actions">
+                      <button
+                        className={`user-lock-btn ${user.isLocked ? 'locked' : ''}`}
+                        onClick={() => handleLockUser(user._id)}
+                      >
+                        {user.isLocked ? 'Розблокувати' : 'Заблокувати'}
+                      </button>
+                      <button
+                        className="user-delete-btn"
+                        onClick={() => handleDeleteUser(user._id)}
+                      >
+                        Видалити
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
-          ))
-        ) : (
-          <div className="no-tests">Немає збережених тестів</div>
-        )}
+          </div>
+        </div>
+
+        <div className="admin-section">
+          <div className="section-header" onClick={() => toggleSection('tests')}>
+            <h2>Керування тестами</h2>
+            <span className={`toggle-icon ${openSections.tests ? 'open' : ''}`}>▼</span>
+          </div>
+          <div className={`section-content ${openSections.tests ? 'open' : ''}`}>
+            <div className="upload-section">
+              {user && (
+                <>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileSelect}
+                    className="file-input"
+                    id="file-input"
+                    disabled={isLoading}
+                    multiple
+                  />
+                  <label htmlFor="file-input" className="file-label" style={{ opacity: isLoading ? 0.7 : 1 }}>
+                    Вибрати файли з тестами
+                  </label>
+                  {selectedFiles.length > 0 && (
+                    <div className="selected-files">
+                      {selectedFiles.map((file, index) => (
+                        <p key={index} className="selected-file">{file.name}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    className="upload-btn"
+                    onClick={handleUpload}
+                    disabled={!selectedFiles.length || !fileContents.length || isLoading}
+                  >
+                    {isLoading ? 'Завантаження...' : `Зберегти тести (${selectedFiles.length})`}
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="tests-list">
+              <h2>Збережені тести:</h2>
+              {isLoading ? (
+                [...Array(3)].map((_, index) => <SkeletonTestItem key={index} />)
+              ) : tests.length > 0 ? (
+                tests.map((test) => (
+                  <div key={test._id} className="test-item">
+                    <h3>{test.subject}</h3>
+                    <p className="test-theme">{test.theme}</p>
+                    <p className="test-date">
+                      Додано: {new Date(test.createdAt).toLocaleString()}
+                    </p>
+                    <p className="test-questions">
+                      Кількість питань: {test.questionsCount}
+                    </p>
+                    {user && (
+                      <div className="test-actions">
+                        <button 
+                          className={`lock-btn ${test.isLocked ? 'locked' : ''}`}
+                          onClick={() => handleLockTest(test._id, !test.isLocked)}
+                          disabled={isLoading}
+                        >
+                          {test.isLocked ? 'Розблокувати' : 'Заблокувати'}
+                        </button>
+                        <button 
+                          className="delete-btn"
+                          onClick={() => handleDeleteClick(test)}
+                          disabled={isLoading}
+                        >
+                          Видалити
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="no-tests">Немає збережених тестів</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {showDeleteModal && (
@@ -301,6 +456,52 @@ function AdminPanel() {
                 Видалити
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showUserModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Додати нового користувача</h3>
+            <form className="user-form" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              handleCreateUser({
+                username: formData.get('username'),
+                password: formData.get('password'),
+                faculty: formData.get('faculty'),
+                role: formData.get('role')
+              });
+            }}>
+              <div className="form-group">
+                <label htmlFor="username">Ім'я користувача</label>
+                <input type="text" id="username" name="username" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="password">Пароль</label>
+                <input type="password" id="password" name="password" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="faculty">Факультет</label>
+                <input type="text" id="faculty" name="faculty" required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="role">Роль</label>
+                <select id="role" name="role" required>
+                  <option value="user">Користувач</option>
+                  <option value="admin">Адміністратор</option>
+                </select>
+              </div>
+              <div className="modal-buttons">
+                <button type="button" className="modal-button cancel" onClick={() => setShowUserModal(false)}>
+                  Скасувати
+                </button>
+                <button type="submit" className="modal-button confirm">
+                  Створити
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

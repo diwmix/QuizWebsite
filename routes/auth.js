@@ -4,10 +4,51 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
+// Отримання списку всіх користувачів (тільки адмін)
+router.get('/users', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при отриманні списку користувачів', error: error.message });
+  }
+});
+
+// Блокування/розблокування користувача (тільки адмін)
+router.put('/users/:userId/toggle-lock', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Користувача не знайдено' });
+    }
+    
+    user.isLocked = !user.isLocked;
+    await user.save();
+    
+    res.json({ message: `Користувача успішно ${user.isLocked ? 'заблоковано' : 'розблоковано'}` });
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при зміні статусу користувача', error: error.message });
+  }
+});
+
+// Видалення користувача (тільки адмін)
+router.delete('/users/:userId', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Користувача не знайдено' });
+    }
+    
+    res.json({ message: 'Користувача успішно видалено' });
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при видаленні користувача', error: error.message });
+  }
+});
+
 // Реєстрація нового користувача (тільки адмін)
 router.post('/register', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password, role, faculty } = req.body;
     
     // Перевірка чи користувач вже існує
     const existingUser = await User.findOne({ username });
@@ -19,7 +60,8 @@ router.post('/register', authenticateToken, isAdmin, async (req, res) => {
     const user = new User({
       username,
       password,
-      role: role || 'user'
+      role: role || 'user',
+      faculty
     });
     
     await user.save();
@@ -41,6 +83,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ 
         message: '❌ Помилка автентифікації',
         details: 'Користувача з таким іменем не знайдено. Перевірте правильність введених даних.'
+      });
+    }
+
+    // Перевірка на блокування
+    if (user.isLocked) {
+      return res.status(403).json({
+        message: '❌ Доступ заборонено',
+        details: 'Ваш обліковий запис заблоковано. Зверніться до адміністратора.'
       });
     }
     
@@ -65,7 +115,9 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        role: user.role
+        role: user.role,
+        faculty: user.faculty,
+        isLocked: user.isLocked
       }
     });
   } catch (error) {

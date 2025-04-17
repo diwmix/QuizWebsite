@@ -16,6 +16,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['admin', 'user'],
     default: 'user'
+  },
+  faculty: {
+    type: String,
+    required: true
+  },
+  isLocked: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
