@@ -6,7 +6,7 @@ import { AuthContext } from '../App';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function AdminPanel() {
-  const { user, handleLogout } = useContext(AuthContext);
+  const { user: currentUser, handleLogout } = useContext(AuthContext);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileContents, setFileContents] = useState([]);
   const [tests, setTests] = useState([]);
@@ -30,6 +30,9 @@ function AdminPanel() {
     faculty: '',
     role: 'user'
   });
+
+  const [editingFaculty, setEditingFaculty] = useState(null);
+  const [newFaculty, setNewFaculty] = useState('');
 
   useEffect(() => {
     fetchTests();
@@ -289,6 +292,30 @@ function AdminPanel() {
     }));
   };
 
+  const handleFacultyUpdate = async (userId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/users/${userId}/faculty`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ faculty: newFaculty })
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при обновлении факультета');
+      }
+
+      const updatedUser = await response.json();
+      setUsers(users.map(user => user._id === userId ? updatedUser : user));
+      setEditingFaculty(null);
+      setNewFaculty('');
+    } catch (error) {
+      console.error('Ошибка при обновлении факультета:', error);
+    }
+  };
+
   const SkeletonTestItem = () => (
     <div className="skeleton-test-item">
       <div className="skeleton-title"></div>
@@ -337,20 +364,47 @@ function AdminPanel() {
                 users.map((user) => (
                   <div key={user._id} className="user-item">
                     <h3>{user.username}</h3>
-                    <div className="user-faculty">{user.faculty}</div>
-                    <div className="user-role">{user.role}</div>
+                    {editingFaculty === user._id ? (
+                      <div className="faculty-edit">
+                        <input
+                          type="text"
+                          value={newFaculty}
+                          onChange={(e) => setNewFaculty(e.target.value)}
+                          placeholder="Новый факультет"
+                        />
+                        <button onClick={() => handleFacultyUpdate(user._id)}>Сохранить</button>
+                        <button onClick={() => {
+                          setEditingFaculty(null);
+                          setNewFaculty('');
+                        }}>Отмена</button>
+                      </div>
+                    ) : (
+                      <p className="user-faculty">Факультет: {user.faculty}</p>
+                    )}
+                    <p className="user-role">Роль: {user.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
                     <div className="user-actions">
                       <button
                         className={`user-lock-btn ${user.isLocked ? 'locked' : ''}`}
                         onClick={() => handleLockUser(user._id)}
+                        disabled={user._id === currentUser._id}
                       >
-                        {user.isLocked ? 'Розблокувати' : 'Заблокувати'}
+                        {user.isLocked ? 'Разблокировать' : 'Заблокировать'}
                       </button>
                       <button
                         className="user-delete-btn"
                         onClick={() => handleDeleteUser(user._id)}
+                        disabled={user._id === currentUser._id}
                       >
-                        Видалити
+                        Удалить
+                      </button>
+                      <button
+                        className="user-edit-btn"
+                        onClick={() => {
+                          setEditingFaculty(user._id);
+                          setNewFaculty(user.faculty);
+                        }}
+                      >
+                        Изменить факультет
                       </button>
                     </div>
                   </div>
@@ -367,7 +421,7 @@ function AdminPanel() {
           </div>
           <div className={`section-content ${openSections.tests ? 'open' : ''}`}>
             <div className="upload-section">
-              {user && (
+              {currentUser && (
                 <>
                   <input
                     type="file"
@@ -415,7 +469,7 @@ function AdminPanel() {
                     <p className="test-questions">
                       Кількість питань: {test.questionsCount}
                     </p>
-                    {user && (
+                    {currentUser && (
                       <div className="test-actions">
                         <button 
                           className={`lock-btn ${test.isLocked ? 'locked' : ''}`}

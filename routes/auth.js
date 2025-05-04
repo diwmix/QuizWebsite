@@ -135,4 +135,33 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Обновление факультета пользователя
+router.put('/users/:userId/faculty', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { faculty } = req.body;
+    const currentUser = req.user;
+
+    // Проверяем, является ли текущий пользователь админом
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ message: 'Доступ запрещен' });
+    }
+
+    // Обновляем факультет пользователя
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { faculty },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера', error: error.message });
+  }
+});
+
 module.exports = router; 
