@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
 import QuestionCard from './QuestionCard';
 import '../styles/TestList.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { getData, postData } from '../utils/api';
+import { getData, postData, putData } from '../utils/api';
+import { AuthContext } from '../App';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function TestList() {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -22,6 +26,7 @@ function TestList() {
   const [testToStart, setTestToStart] = useState(null);
   const [status, setStatus] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [faculties, setFaculties] = useState([]);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -56,6 +61,38 @@ function TestList() {
     }
   }, [selectedTest, currentQuestion, answers, result]);
 
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchFaculties();
+    }
+  }, [user]);
+
+  const fetchFaculties = async () => {
+    try {
+      const response = await getData(`${API_URL}/api/auth/faculties`);
+      setFaculties(response);
+    } catch (error) {
+      console.error('Помилка при отриманні факультетів:', error);
+    }
+  };
+
+  const handleFacultyChange = async (event) => {
+    try {
+      const newFaculty = event.target.value;
+      await putData(`${API_URL}/api/auth/users/${user.id}/faculty`, { faculty: newFaculty });
+      // Оновлюємо дані користувача в контексті
+      const updatedUser = { ...user, faculty: newFaculty };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      window.location.reload(); // Перезавантажуємо сторінку для оновлення даних
+    } catch (error) {
+      console.error('Помилка при оновленні факультету:', error);
+      setStatus({
+        message: 'Помилка при оновленні факультету',
+        type: 'error'
+      });
+    }
+  };
+
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -71,6 +108,7 @@ function TestList() {
       setShowError(false);
       setError('');
       
+      // Отримуємо тести для факультету користувача
       const data = await getData(`${API_URL}/api/tests`);
       
       if (!data || !Array.isArray(data)) {
@@ -424,7 +462,30 @@ function TestList() {
 
   return (
     <div className="test-list">
-      <h1>ІФНМУ Тести</h1>
+      <div className="test-list-header">
+        <h1>ІФНМУ Тести</h1>
+        {user?.role === 'admin' && (
+          <div className="admin-controls">
+            <button 
+              className="admin-panel-btn"
+              onClick={() => navigate('/admin')}
+            >
+              Адмін панель
+            </button>
+            <select 
+              className="faculty-select"
+              value={user.faculty || ''}
+              onChange={handleFacultyChange}
+            >
+              {faculties.map(faculty => (
+                <option key={faculty} value={faculty}>
+                  {faculty}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
       <p className="description">
         Цей сайт створений для зручного проходження тестів з миттєвим показом правильних відповідей та можливістю додати свій тест з docs/docx файлу де зібрана база тестів. Всі тести взяті з ресурсу tests.if.ua та адаптовані для кращого досвіду навчання.
       </p>
@@ -499,7 +560,7 @@ function TestList() {
       </div>
       
       {(!selectedSubject && filteredTests.length === 0 && !isLoading) && (
-        <div className="no-tests">Немає доступних тестів</div>
+        <div className="no-tests">Немає доступних тестів для вашого факультету</div>
       )}
       {(selectedSubject && filteredTests.length === 0 && !isLoading) && (
         <div className="no-tests">Немає тестів для вибраного предмету</div>

@@ -22,6 +22,10 @@ function AdminPanel() {
     users: true,
     tests: true
   });
+  const [selectedFaculty, setSelectedFaculty] = useState('all');
+  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [faculties, setFaculties] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   
   // Стан для нового користувача
   const [newUser, setNewUser] = useState({
@@ -39,10 +43,42 @@ function AdminPanel() {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    // Extract unique faculties from tests
+    const uniqueFaculties = [...new Set(tests.map(test => test.faculty))];
+    setFaculties(uniqueFaculties);
+  }, [tests]);
+
+  // Update subjects when faculty changes
+  useEffect(() => {
+    if (selectedFaculty === 'all') {
+      // If all faculties are selected, show all subjects
+      const uniqueSubjects = [...new Set(tests.map(test => test.subject))];
+      setSubjects(uniqueSubjects);
+    } else {
+      // Show only subjects for selected faculty
+      const facultySubjects = [...new Set(
+        tests
+          .filter(test => test.faculty === selectedFaculty)
+          .map(test => test.subject)
+      )];
+      setSubjects(facultySubjects);
+    }
+    // Reset subject selection when faculty changes
+    setSelectedSubject('all');
+  }, [selectedFaculty, tests]);
+
+  // Filter tests based on selected faculty and subject
+  const filteredTests = tests.filter(test => {
+    const facultyMatch = selectedFaculty === 'all' || test.faculty === selectedFaculty;
+    const subjectMatch = selectedSubject === 'all' || test.subject === selectedSubject;
+    return facultyMatch && subjectMatch;
+  });
+
   const fetchTests = async () => {
     try {
       setIsLoading(true);
-      const data = await getData(`${API_URL}/api/tests`);
+      const data = await getData(`${API_URL}/api/admin/tests`);
       setTests(data);
       setStatus({ message: '', type: '' });
     } catch (error) {
@@ -333,7 +369,9 @@ function AdminPanel() {
     <div className="admin-panel">
       <div className="admin-header">
         <h1>Панель адміністратора</h1>
-        <button onClick={handleLogout} className="logout-btn">Вийти</button>
+        <button className="logout-btn" onClick={handleLogout}>
+          Вийти
+        </button>
       </div>
 
       {status.message && (
@@ -388,14 +426,14 @@ function AdminPanel() {
                         onClick={() => handleLockUser(user._id)}
                         disabled={user._id === currentUser._id}
                       >
-                        {user.isLocked ? 'Разблокировать' : 'Заблокировать'}
+                        {user.isLocked ? 'Розблокувати' : 'Заблокувати'}
                       </button>
                       <button
                         className="user-delete-btn"
                         onClick={() => handleDeleteUser(user._id)}
                         disabled={user._id === currentUser._id}
                       >
-                        Удалить
+                        Видалити
                       </button>
                       <button
                         className="user-edit-btn"
@@ -404,7 +442,7 @@ function AdminPanel() {
                           setNewFaculty(user.faculty);
                         }}
                       >
-                        Изменить факультет
+                        Змінити факультет
                       </button>
                     </div>
                   </div>
@@ -423,6 +461,37 @@ function AdminPanel() {
             <div className="upload-section">
               {currentUser && (
                 <>
+                  <div className="filters-container">
+                    <div className="faculty-filter">
+                      <select 
+                        className="faculty-select"
+                        value={selectedFaculty}
+                        onChange={(e) => setSelectedFaculty(e.target.value)}
+                      >
+                        <option value="all">Всі факультети</option>
+                        {faculties.map(faculty => (
+                          <option key={faculty} value={faculty}>
+                            {faculty}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="subject-filter">
+                      <select 
+                        className="subject-select"
+                        value={selectedSubject}
+                        onChange={(e) => setSelectedSubject(e.target.value)}
+                        disabled={subjects.length === 0}
+                      >
+                        <option value="all">Всі предмети</option>
+                        {subjects.map(subject => (
+                          <option key={subject} value={subject}>
+                            {subject}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <input
                     type="file"
                     accept=".json"
@@ -458,8 +527,8 @@ function AdminPanel() {
               <h2>Збережені тести:</h2>
               {isLoading ? (
                 [...Array(3)].map((_, index) => <SkeletonTestItem key={index} />)
-              ) : tests.length > 0 ? (
-                tests.map((test) => (
+              ) : filteredTests.length > 0 ? (
+                filteredTests.map((test) => (
                   <div key={test._id} className="test-item">
                     <h3>{test.subject}</h3>
                     <p className="test-theme">{test.theme}</p>

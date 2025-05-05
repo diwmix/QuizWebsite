@@ -86,11 +86,20 @@ apiRouter.post('/test', authenticateToken, isAdmin, async (req, res) => {
 // Отримання всіх тестів (захищений доступ)
 apiRouter.get('/tests', authenticateToken, async (req, res) => {
   try {
-    // Отримуємо факультет користувача
+    // Повертаємо тести тільки факультету користувача, незалежно від ролі
     const userFaculty = req.user.faculty;
-    
-    // Знаходимо тести тільки для факультету користувача
     const tests = await Test.find({ faculty: userFaculty }).select('-questions');
+    res.json(tests);
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при отриманні тестів', error: error.message });
+  }
+});
+
+// Отримання всіх тестів для адмін панелі (захищений доступ)
+apiRouter.get('/admin/tests', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    // Повертаємо всі тести для адмін панелі
+    const tests = await Test.find().select('-questions');
     res.json(tests);
   } catch (error) {
     res.status(500).json({ message: 'Помилка при отриманні тестів', error: error.message });

@@ -164,4 +164,14 @@ router.put('/users/:userId/faculty', authenticateToken, async (req, res) => {
   }
 });
 
+// Отримання списку унікальних факультетів
+router.get('/faculties', authenticateToken, async (req, res) => {
+  try {
+    const faculties = await User.distinct('faculty');
+    res.json(faculties);
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка при отриманні списку факультетів', error: error.message });
+  }
+});
+
 module.exports = router; 
